@@ -1,11 +1,20 @@
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { BusinessSchema } from "@/components/business-schema";
 import { BreadcrumbSchema } from "@/components/breadcrumb-schema";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { getBackendUrl } from "@/lib/api";
 import { logger } from "@/lib/logger";
+import { getBuildSlugs } from "@/lib/build-slugs";
 import BusinessDetailPage from "../business/[id]/page";
+
+export async function generateStaticParams() {
+  try {
+    const { businesses } = await getBuildSlugs();
+    return businesses.map((b) => ({ slug: b.slug }));
+  } catch {
+    return [];
+  }
+}
 
 function serializeId(doc: any): any {
   if (!doc) return doc;
@@ -53,12 +62,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   try {
     // Fetch business data from backend
     const response = await fetch(`${backendUrl}/api/business/${encodeURIComponent(slug)}`, {
-      headers: {
-        ...Object.fromEntries((await headers()).entries()),
-      },
-      next: {
-        revalidate: 3600, // Revalidate every hour
-      },
+      next: { revalidate: 3600 },
     });
 
     if (response.ok) {
@@ -115,12 +119,7 @@ export default async function BusinessBySlugPage({
   try {
     // Fetch business data
     const bizResponse = await fetch(`${backendUrl}/api/business/${encodeURIComponent(slug)}`, {
-      headers: {
-        ...Object.fromEntries((await headers()).entries()),
-      },
-      next: {
-        revalidate: 3600, // Revalidate every hour
-      },
+      next: { revalidate: 3600 },
     });
 
     if (!bizResponse.ok) {

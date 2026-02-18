@@ -1,14 +1,13 @@
 const isProd = process.env.NODE_ENV === "production";
-const isCpanel = !!process.env.CPANEL_DEPLOY;
 
 const nextConfig = {
-  output: "standalone",
+  output: "export",
   eslint: { ignoreDuringBuilds: true },
   typescript: { ignoreBuildErrors: true },
   productionBrowserSourceMaps: false,
   compiler: isProd ? { removeConsole: { exclude: ['error'] } } : undefined,
   images: {
-    unoptimized: false,
+    unoptimized: true,
     remotePatterns: [
       { protocol: "https", hostname: "res.cloudinary.com", pathname: "/**" },
     ],
@@ -16,6 +15,7 @@ const nextConfig = {
   compress: true,
   poweredByHeader: false,
   reactStrictMode: true,
+  trailingSlash: false,
   async redirects() {
     return [
       { source: '/business/:slug', destination: '/:slug', permanent: true },
@@ -25,15 +25,10 @@ const nextConfig = {
     ]
   },
   async rewrites() {
-    // On cPanel: Apache handles /api/* directly via PHP, no rewrite needed
-    if (isCpanel) return [];
-    // Local dev: proxy /api/* to PHP backend
+    if (process.env.CPANEL_DEPLOY || process.env.NEXT_PUBLIC_STATIC_EXPORT) return [];
     const backendUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
     return [
-      {
-        source: '/api/:path*',
-        destination: `${backendUrl}/api/:path*`,
-      },
+      { source: '/api/:path*', destination: `${backendUrl}/api/:path*` },
     ]
   },
 }

@@ -342,7 +342,11 @@ try {
     echo "  ERROR: {$e->getMessage()}\n";
 }
 
+// Expose stats when included from API (e.g. admin import)
+$GLOBALS['migration_stats'] = $stats;
+
 // ─── SUMMARY ──────────────────────────────────────────────────
+if (!defined('MIGRATION_SILENT')) {
 echo "\n=== Migration Complete ===\n";
 echo "Categories:    {$stats['categories']}\n";
 echo "Subcategories: {$stats['subcategories']}\n";
@@ -351,6 +355,7 @@ echo "Businesses:    {$stats['businesses']}\n";
 echo "Reviews:       {$stats['reviews']}\n";
 echo "Users:         {$stats['users']}\n";
 echo "Errors:        {$stats['errors']}\n";
+}
 
 // ─── Helper functions ─────────────────────────────────────────
 

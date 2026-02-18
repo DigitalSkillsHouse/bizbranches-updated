@@ -1,40 +1,33 @@
 # BizBranches - cPanel Single-Domain Deployment Guide
 
-## Architecture (Single Domain)
+## Architecture (Static Export – No Node.js)
+
+The frontend is built as a **static export** (HTML/CSS/JS). cPanel serves these files with Apache; **no Node.js app** is required.
 
 ```
-bizbranches.pk/              → Next.js frontend (Node.js on cPanel)
-bizbranches.pk/api/*         → PHP backend (Apache serves PHP natively)
-bizbranches.pk/_next/static  → Static JS/CSS assets
-bizbranches.pk/public files  → Images, manifest, robots.txt
+biz.digitalskillshouse.pk/     → Static HTML/JS (Apache)
+biz.digitalskillshouse.pk/api/* → PHP backend (Apache)
 ```
 
-Apache handles `/api/*` requests with PHP directly.
-Everything else goes through the Node.js app (Next.js).
-No subdomain needed -- everything runs on ONE domain.
+Apache serves static files from the domain root and routes `/api/*` to PHP.
 
 ### Directory on cPanel
 
 ```
 public_html/
-├── .htaccess          ← Routes /api/* to PHP, rest to Node.js
-├── app.js             ← cPanel Node.js entry point
-├── server.js          ← Next.js standalone server
-├── .next/             ← Next.js build output
-│   └── static/        ← CSS, JS bundles
-├── public/            ← Images, fonts, manifest
-├── api/               ← PHP backend (deployed here by CI/CD)
-│   ├── .htaccess      ← PHP internal routing
-│   ├── .env           ← Database credentials (create manually!)
-│   ├── index.php      ← PHP API entry point
-│   ├── config/
-│   ├── lib/
-│   ├── routes/
-│   ├── migrations/
-│   ├── scripts/       ← JSON data files for import
-│   └── vendor/        ← Composer dependencies
-└── tmp/
-    └── restart.txt    ← Touch to restart Node.js
+├── .htaccess          ← Routes /api/* to PHP, serves static files otherwise
+├── index.html         ← Home page (from Next.js static export)
+├── _next/             ← JS/CSS bundles
+├── category/          ← Category pages (static)
+├── city/              ← City pages (static)
+├── admin/             ← Admin import page (static)
+├── *.html             ← Other static pages
+├── public/            ← Images, manifest, robots.txt (if copied)
+└── api/               ← PHP backend (deployed by CI/CD)
+    ├── .htaccess
+    ├── .env            ← Create manually!
+    ├── index.php
+    ├── config/, lib/, routes/, migrations/, scripts/, vendor/
 ```
 
 ---
@@ -49,16 +42,9 @@ public_html/
 4. Add user to database with **ALL PRIVILEGES**
 5. **phpMyAdmin** → select database → **Import** tab → upload `backend-php/migrations/001_create_tables.sql`
 
-### 1.2 Setup Node.js Application
+### 1.2 No Node.js required
 
-1. **cPanel > Setup Node.js App**
-2. Click **Create Application**:
-   - Node.js version: **20.x** (or latest LTS)
-   - Application mode: **Production**
-   - Application root: `public_html`
-   - Application URL: `bizbranches.pk`
-   - Startup file: `app.js`
-3. Click **Create**
+The frontend is a **static export**. Apache serves the built HTML/JS/CSS; you do **not** need to create a Node.js application in cPanel.
 
 ### 1.3 Create `.env` File for PHP Backend
 
@@ -123,20 +109,25 @@ Or trigger manually: **GitHub > Actions > Run workflow**
 
 ## Step 4: Import MongoDB Data
 
-After the first deploy puts files on the server:
+**Option A – From the frontend (recommended)**  
+1. Ensure tables exist (Step 1.1 – import the SQL in phpMyAdmin).  
+2. Visit: `https://biz.digitalskillshouse.pk/admin/import`  
+3. Enter your **Admin secret** (same as `ADMIN_SECRET` in `api/.env`).  
+4. Upload one or more JSON files (categories, cities, businesses, reviews, users).  
+5. Click **Start import**. The page will show how many rows were imported.
 
-1. Visit: `https://bizbranches.pk/api/run-migration.php?secret=YOUR_ADMIN_SECRET`
-2. Wait for it to finish (imports categories, cities, businesses, reviews, users)
-3. **Delete** `run-migration.php` from the server via File Manager
+**Option B – From the server**  
+1. Visit: `https://biz.digitalskillshouse.pk/api/run-migration.php?secret=YOUR_ADMIN_SECRET`  
+2. Wait for it to finish.  
+3. **Delete** `run-migration.php` from the server via File Manager after use.
 
 ---
 
-## Step 5: Restart & Verify
+## Step 5: Verify
 
-1. **cPanel > Setup Node.js App** → Click **Restart**
-2. Test frontend: `https://bizbranches.pk`
-3. Test API: `https://bizbranches.pk/api/ping`
-4. Test DB: `https://bizbranches.pk/api/db-health`
+1. Test frontend: `https://biz.digitalskillshouse.pk`
+2. Test API: `https://biz.digitalskillshouse.pk/api/ping`
+3. Test DB: `https://biz.digitalskillshouse.pk/api/db-health`
 
 ---
 
@@ -150,11 +141,28 @@ After the first deploy puts files on the server:
 
 ## Troubleshooting
 
+### You see `{"ok":true,"message":"BizBranches API Server (PHP)"}` instead of the website
+
+The domain document root is pointing at the **API folder** instead of the folder that contains the **static site** and `api/`:
+
+1. **Set document root to the folder that has the static site**  
+   In **cPanel > Domains** (or **Subdomains**), edit `biz.digitalskillshouse.pk` and set **Document Root** to the directory that contains **both** `index.html` and `.htaccess` (frontend) **and** the `api/` subfolder. Example: `public_html` — **not** `public_html/api`.
+
+2. **Add GitHub Secrets**  
+   **Settings > Secrets > Actions**:  
+   - `FTP_DEPLOY_DIR` = that folder’s full path, e.g. `/home/digitalskills/public_html/` (end with `/`).  
+   - `SITE_URL` = `https://biz.digitalskillshouse.pk`
+
+3. **Redeploy**  
+   Push to `main` or run the **Deploy to cPanel via FTP** workflow. The workflow deploys the backend first, then builds the static site (calling your API for slugs) and uploads the `out/` contents to the root.
+
+---
+
 | Problem | Fix |
 |---|---|
 | `/api/*` returns 404 | Check `public_html/api/.htaccess` exists |
 | API returns 500 | Check `public_html/api/.env` has correct DB credentials |
-| Frontend blank page | Restart Node.js app in cPanel |
+| Frontend blank or 404 | Ensure document root is the folder with index.html and .htaccess, not api/ |
 | CORS errors | `SITE_URL` in `api/.env` must match your domain |
 | Static files not loading | Check `public_html/.next/static/` exists |
 | Images not showing | Check `public_html/public/` folder was uploaded |

@@ -11,84 +11,7 @@ env:
 
 jobs:
   # ─────────────────────────────────────────────
-  # Job 1: Build Next.js & deploy frontend to domain root
-  # ─────────────────────────────────────────────
-  deploy-frontend:
-    name: Build & Deploy Frontend
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-
-      - name: Install frontend dependencies
-        working-directory: frontend
-        run: npm ci
-
-      - name: Create frontend .env
-        working-directory: frontend
-        run: |
-          cat <<EOF > .env.local
-          NEXT_PUBLIC_BACKEND_URL=${{ secrets.SITE_URL }}
-          BACKEND_URL=${{ secrets.SITE_URL }}
-          NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME }}
-          NEXT_PUBLIC_SITE_URL=${{ secrets.SITE_URL }}
-          CPANEL_DEPLOY=true
-          NODE_ENV=production
-          EOF
-
-      - name: Build Next.js (standalone)
-        working-directory: frontend
-        run: npm run build
-        env:
-          CPANEL_DEPLOY: "true"
-
-      - name: Prepare deployment package
-        working-directory: frontend
-        run: |
-          # Copy static assets into standalone output
-          cp -r .next/static .next/standalone/.next/static
-          cp -r public .next/standalone/public
-          # Copy cPanel entry point
-          cp app.js .next/standalone/app.js
-          # Copy root .htaccess for Apache routing
-          cp ../cpanel-htaccess .next/standalone/.htaccess
-          # Create package.json for cPanel Node.js app
-          cat <<'PKGJSON' > .next/standalone/package.json
-          {
-            "name": "bizbranches-frontend",
-            "version": "1.0.0",
-            "private": true,
-            "scripts": {
-              "start": "node server.js"
-            }
-          }
-          PKGJSON
-
-      - name: Deploy frontend to cPanel via FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: frontend/.next/standalone/
-          server-dir: ${{ secrets.FTP_DEPLOY_DIR }}
-          dangerous-clean-slate: false
-          exclude: |
-            **/.git*
-            **/.git*/**
-            **/node_modules/**
-            **/.env*
-            **/api/**
-
-  # ─────────────────────────────────────────────
-  # Job 2: Deploy PHP backend to /api/ subfolder
+  # Job 1: Deploy PHP backend first (so API is up for static build)
   # ─────────────────────────────────────────────
   deploy-backend:
     name: Deploy PHP Backend
@@ -114,9 +37,69 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: backend-php/
-          server-dir: ${{ secrets.FTP_DEPLOY_DIR }}api/
+          server-dir: ${{ secrets.FTP_DEPLOY_DIR || '/public_html/' }}api/
           dangerous-clean-slate: false
           exclude: |
             **/.git*
             **/.git*/**
             **/.env
+
+  # ─────────────────────────────────────────────
+  # Job 2: Build Next.js static export & deploy to domain root
+  # ─────────────────────────────────────────────
+  deploy-frontend:
+    name: Build & Deploy Frontend (Static)
+    runs-on: ubuntu-latest
+    needs: [deploy-backend]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Create frontend .env
+        working-directory: frontend
+        run: |
+          SITE_URL="${{ secrets.SITE_URL }}"
+          if [ -z "$SITE_URL" ]; then SITE_URL="https://biz.digitalskillshouse.pk"; fi
+          cat <<EOF > .env.local
+          NEXT_PUBLIC_BACKEND_URL=${SITE_URL}
+          BACKEND_URL=${SITE_URL}
+          NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          NEXT_PUBLIC_SITE_URL=${SITE_URL}
+          NEXT_PUBLIC_STATIC_EXPORT=true
+          NODE_ENV=production
+          EOF
+
+      - name: Build Next.js (static export)
+        working-directory: frontend
+        run: npm run build
+        env:
+          NEXT_PUBLIC_STATIC_EXPORT: "true"
+
+      - name: Prepare static deployment
+        run: |
+          cp cpanel-htaccess frontend/out/.htaccess
+
+      - name: Deploy static site to cPanel via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: frontend/out/
+          server-dir: ${{ secrets.FTP_DEPLOY_DIR || '/public_html/' }}
+          dangerous-clean-slate: false
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/api/**

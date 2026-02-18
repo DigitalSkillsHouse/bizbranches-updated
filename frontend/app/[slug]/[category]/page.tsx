@@ -2,7 +2,17 @@ import { Metadata } from "next"
 import { SITE_NAME, SITE_URL } from "@/lib/site"
 import { citySlugToName } from "@/lib/city-slug"
 import { getBackendUrl } from "@/lib/api"
+import { getBuildSlugs } from "@/lib/build-slugs"
 import { CityCategoryPageClient } from "./city-category-page-client"
+
+export async function generateStaticParams() {
+  try {
+    const { cityCategory } = await getBuildSlugs();
+    return cityCategory.map(({ slug, category }) => ({ slug, category }));
+  } catch {
+    return [];
+  }
+}
 
 function categorySlugToTitle(slug: string): string {
   return slug.split("-").map((s) => s.charAt(0).toUpperCase() + s.slice(1)).join(" ")
