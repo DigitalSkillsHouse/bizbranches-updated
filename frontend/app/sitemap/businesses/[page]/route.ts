@@ -7,6 +7,22 @@ const SITEMAP_BUSINESS_LIMIT = 45000;
 export const dynamic = 'force-static';
 export const revalidate = 300;
 
+export async function generateStaticParams() {
+  try {
+    const res = await fetch(
+      `${getBackendUrl()}/api/sitemap/businesses?page=1&limit=1`,
+      { cache: 'no-store' }
+    );
+    if (!res.ok) return [{ page: '1' }];
+    const data = await res.json();
+    const total = Number(data.total) || 0;
+    const pages = Math.max(1, Math.ceil(total / SITEMAP_BUSINESS_LIMIT));
+    return Array.from({ length: pages }, (_, i) => ({ page: String(i + 1) }));
+  } catch {
+    return [{ page: '1' }];
+  }
+}
+
 /**
  * GET /sitemap/businesses/[page] — One chunk of business listing URLs (paginated).
  * Each chunk stays under Google's 50,000 URL limit. New listings appear via pagination.
