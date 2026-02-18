@@ -22,7 +22,7 @@ jobs:
         run: |
           if [ -z "$FTP_SERVER" ] || [ -z "$FTP_USERNAME" ] || [ -z "$FTP_PASSWORD" ]; then
             echo "::error::Set FTP_SERVER, FTP_USERNAME, FTP_PASSWORD in repo Settings > Secrets and variables > Actions"
-            echo "Optional: FTP_DEPLOY_DIR (e.g. /home/user/public_html/), SITE_URL, CLOUDINARY_CLOUD_NAME"
+            echo "Optional: FTP_DEPLOY_DIR (defaults to ./ i.e. FTP root), SITE_URL, CLOUDINARY_CLOUD_NAME"
             exit 1
           fi
           echo "Secrets OK"
@@ -47,7 +47,7 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: backend-php/
-          server-dir: ${{ secrets.FTP_DEPLOY_DIR || 'public_html/' }}api/
+          server-dir: ${{ secrets.FTP_DEPLOY_DIR || './' }}api/
           dangerous-clean-slate: false
           exclude: |
             **/.git*
@@ -110,7 +110,7 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: frontend/out/
-          server-dir: ${{ secrets.FTP_DEPLOY_DIR || 'public_html/' }}
+          server-dir: ${{ secrets.FTP_DEPLOY_DIR || './' }}
           dangerous-clean-slate: false
           exclude: |
             **/.git*
