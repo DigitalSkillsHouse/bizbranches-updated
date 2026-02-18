@@ -1,5 +1,8 @@
 RewriteEngine On
 
+# ─── Redirect legacy /business/slug → /slug (permanent) ───
+RewriteRule ^business/(.+)$ /$1 [R=301,L]
+
 # ─── Serve /api/* requests via PHP (bypasses Passenger/Node.js) ───
 RewriteCond %{REQUEST_URI} ^/api(/.*)?$
 RewriteCond %{REQUEST_FILENAME} !-f

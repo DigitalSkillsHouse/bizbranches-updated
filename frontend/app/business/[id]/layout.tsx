@@ -2,6 +2,10 @@ import { Metadata } from "next";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { getBackendUrl } from "@/lib/api";
 
+export async function generateStaticParams() {
+  return [];
+}
+
 export async function generateMetadata({
   params,
 }: {

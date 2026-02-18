@@ -1,4 +1,5 @@
 const isProd = process.env.NODE_ENV === "production";
+const isStaticExport = !!process.env.NEXT_PUBLIC_STATIC_EXPORT;
 
 const nextConfig = {
   output: "export",
@@ -16,22 +17,22 @@ const nextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
   trailingSlash: false,
-  async redirects() {
-    if (process.env.NEXT_PUBLIC_STATIC_EXPORT) return [];
-    return [
-      { source: '/business/:slug', destination: '/:slug', permanent: true },
-      { source: '/city/:path*/business/:slug', destination: '/:slug', permanent: true },
-      { source: '/category/:path*/business/:slug', destination: '/:slug', permanent: true },
-      { source: '/404', destination: '/', permanent: false },
-    ]
-  },
-  async rewrites() {
-    if (process.env.CPANEL_DEPLOY || process.env.NEXT_PUBLIC_STATIC_EXPORT) return [];
-    const backendUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
-    return [
-      { source: '/api/:path*', destination: `${backendUrl}/api/:path*` },
-    ]
-  },
+  ...(isStaticExport ? {} : {
+    async redirects() {
+      return [
+        { source: '/business/:slug', destination: '/:slug', permanent: true },
+        { source: '/city/:path*/business/:slug', destination: '/:slug', permanent: true },
+        { source: '/category/:path*/business/:slug', destination: '/:slug', permanent: true },
+        { source: '/404', destination: '/', permanent: false },
+      ]
+    },
+    async rewrites() {
+      const backendUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
+      return [
+        { source: '/api/:path*', destination: `${backendUrl}/api/:path*` },
+      ]
+    },
+  }),
 }
 
 export default nextConfig
