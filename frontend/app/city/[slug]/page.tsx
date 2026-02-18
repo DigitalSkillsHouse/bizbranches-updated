@@ -1,7 +1,7 @@
 import CityPageClient from "./city-page-client"
 
 export function generateStaticParams() {
-  return [];
+  return [{ slug: '_placeholder' }];
 }
 
 export default function CityPage() {

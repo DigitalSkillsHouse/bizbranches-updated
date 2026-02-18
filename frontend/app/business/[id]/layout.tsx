@@ -3,7 +3,7 @@ import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { getBackendUrl } from "@/lib/api";
 
 export function generateStaticParams() {
-  return [];
+  return [{ id: '_placeholder' }];
 }
 
 export async function generateMetadata({

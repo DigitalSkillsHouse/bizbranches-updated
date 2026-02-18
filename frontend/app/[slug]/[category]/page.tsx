@@ -5,7 +5,7 @@ import { getBackendUrl } from "@/lib/api"
 import { CityCategoryPageClient } from "./city-category-page-client"
 
 export function generateStaticParams() {
-  return [];
+  return [{ slug: '_placeholder', category: '_placeholder' }];
 }
 
 function categorySlugToTitle(slug: string): string {

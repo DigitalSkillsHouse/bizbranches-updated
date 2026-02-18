@@ -6,7 +6,7 @@ import { logger } from "@/lib/logger";
 import BusinessDetailPage from "../business/[id]/page";
 
 export function generateStaticParams() {
-  return [];
+  return [{ slug: '_placeholder' }];
 }
 
 function serializeId(doc: any): any {
