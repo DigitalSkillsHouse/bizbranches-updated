@@ -1,8 +1,10 @@
 -- BizBranches MySQL Database Schema
 -- Run this to create all tables from scratch
 
-CREATE DATABASE IF NOT EXISTS bizbranches CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE bizbranches;
+-- If running in phpMyAdmin, select your database first (digitalskills_bizbranchespk)
+-- These lines are for CLI usage only:
+CREATE DATABASE IF NOT EXISTS digitalskills_bizbranchespk CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE digitalskills_bizbranchespk;
 
 -- Businesses table
 CREATE TABLE IF NOT EXISTS businesses (
@@ -148,62 +150,5 @@ CREATE TABLE IF NOT EXISTS rate_limits (
     INDEX idx_window (window_start)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Default categories
-INSERT IGNORE INTO categories (name, slug, icon, description, count, is_active) VALUES
-('Restaurants', 'restaurants', '🍽️', 'Dining and food services', 0, 1),
-('Healthcare', 'healthcare', '🏥', 'Medical and health services', 0, 1),
-('Education', 'education', '🏫', 'Educational institutions and services', 0, 1),
-('Automotive', 'automotive', '🚗', 'Automotive repair and services', 0, 1),
-('Beauty & Salon', 'beauty-salon', '✂️', 'Beauty and salon services', 0, 1),
-('Shopping', 'shopping', '🛍️', 'Retail and shopping centers', 0, 1);
-
--- Default subcategories
-INSERT IGNORE INTO subcategories (category_id, name, slug) VALUES
-((SELECT id FROM categories WHERE slug='beauty-salon'), 'Hair Care', 'hair-care'),
-((SELECT id FROM categories WHERE slug='beauty-salon'), 'Makeup', 'makeup'),
-((SELECT id FROM categories WHERE slug='beauty-salon'), 'Skin Care', 'skin-care'),
-((SELECT id FROM categories WHERE slug='beauty-salon'), 'Nail Salon', 'nail-salon'),
-((SELECT id FROM categories WHERE slug='beauty-salon'), 'Spa', 'spa'),
-((SELECT id FROM categories WHERE slug='automotive'), 'Car Repair', 'car-repair'),
-((SELECT id FROM categories WHERE slug='automotive'), 'Car Wash', 'car-wash'),
-((SELECT id FROM categories WHERE slug='automotive'), 'Tyres & Wheels', 'tyres-wheels'),
-((SELECT id FROM categories WHERE slug='automotive'), 'Car Accessories', 'car-accessories'),
-((SELECT id FROM categories WHERE slug='automotive'), 'Showroom', 'showroom'),
-((SELECT id FROM categories WHERE slug='restaurants'), 'Fast Food', 'fast-food'),
-((SELECT id FROM categories WHERE slug='restaurants'), 'BBQ', 'bbq'),
-((SELECT id FROM categories WHERE slug='restaurants'), 'Pakistani', 'pakistani'),
-((SELECT id FROM categories WHERE slug='restaurants'), 'Chinese', 'chinese'),
-((SELECT id FROM categories WHERE slug='restaurants'), 'Cafe', 'cafe'),
-((SELECT id FROM categories WHERE slug='healthcare'), 'Clinic', 'clinic'),
-((SELECT id FROM categories WHERE slug='healthcare'), 'Hospital', 'hospital'),
-((SELECT id FROM categories WHERE slug='healthcare'), 'Pharmacy', 'pharmacy'),
-((SELECT id FROM categories WHERE slug='healthcare'), 'Dentist', 'dentist'),
-((SELECT id FROM categories WHERE slug='healthcare'), 'Laboratory', 'laboratory'),
-((SELECT id FROM categories WHERE slug='education'), 'School', 'school'),
-((SELECT id FROM categories WHERE slug='education'), 'College', 'college'),
-((SELECT id FROM categories WHERE slug='education'), 'University', 'university'),
-((SELECT id FROM categories WHERE slug='education'), 'Coaching', 'coaching'),
-((SELECT id FROM categories WHERE slug='education'), 'Training Center', 'training-center'),
-((SELECT id FROM categories WHERE slug='shopping'), 'Clothing', 'clothing'),
-((SELECT id FROM categories WHERE slug='shopping'), 'Electronics', 'electronics'),
-((SELECT id FROM categories WHERE slug='shopping'), 'Groceries', 'groceries'),
-((SELECT id FROM categories WHERE slug='shopping'), 'Footwear', 'footwear'),
-((SELECT id FROM categories WHERE slug='shopping'), 'Jewelry', 'jewelry');
-
--- Default cities
-INSERT IGNORE INTO cities (name, slug, province, country, is_active) VALUES
-('New York', 'new-york', 'New York', 'United States', 1),
-('Los Angeles', 'los-angeles', 'California', 'United States', 1),
-('London', 'london', 'England', 'United Kingdom', 1),
-('Toronto', 'toronto', 'Ontario', 'Canada', 1),
-('Sydney', 'sydney', 'New South Wales', 'Australia', 1),
-('Berlin', 'berlin', 'Berlin', 'Germany', 1),
-('Paris', 'paris', 'Île-de-France', 'France', 1),
-('Mumbai', 'mumbai', 'Maharashtra', 'India', 1),
-('Dubai', 'dubai', 'Dubai', 'UAE', 1),
-('Karachi', 'karachi', 'Sindh', 'Pakistan', 1),
-('Lahore', 'lahore', 'Punjab', 'Pakistan', 1),
-('Islamabad', 'islamabad', 'Federal Capital', 'Pakistan', 1),
-('Rawalpindi', 'rawalpindi', 'Punjab', 'Pakistan', 1),
-('Faisalabad', 'faisalabad', 'Punjab', 'Pakistan', 1),
-('Multan', 'multan', 'Punjab', 'Pakistan', 1);
+-- No default seed data -- real data will be imported from MongoDB JSON exports
+-- Run: php scripts/migrate_from_mongodb.php (after uploading JSON files)

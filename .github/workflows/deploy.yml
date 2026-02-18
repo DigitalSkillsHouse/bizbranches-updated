@@ -114,12 +114,6 @@ jobs:
             **/.git*
             **/.git*/**
             **/.env
-            **/scripts/businesses.json
-            **/scripts/reviews.json
-            **/scripts/categories.json
-            **/scripts/cities.json
-            **/scripts/users.json
-            **/scripts/migrate_from_mongodb.php
 
   # ─────────────────────────────────────────────
   # Job 3: Run database migrations (on first deploy or schema changes)

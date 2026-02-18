@@ -30,6 +30,6 @@ backend-php/vendor/
 # FTP deploy state
 .ftp-deploy-sync-state.json
 
-# Large data files (seed via migration, not git)
-backend-php/scripts/businesses.json
-backend-php/scripts/reviews.json
+# After migration is done, uncomment these to stop uploading large JSON files:
+# backend-php/scripts/businesses.json
+# backend-php/scripts/reviews.json
