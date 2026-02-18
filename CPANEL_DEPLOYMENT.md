@@ -141,6 +141,26 @@ Or trigger manually: **GitHub > Actions > Run workflow**
 
 ## Troubleshooting
 
+### GitHub Action not running or deployment fails
+
+1. **Action never runs**
+   - Push is on the **main** branch (workflow triggers on `push` to `main`).
+   - Or run it manually: **Actions** tab → **Deploy to cPanel via FTP** → **Run workflow** → **Run workflow**.
+
+2. **"Check required secrets" fails**
+   - Go to **Settings** → **Secrets and variables** → **Actions**.
+   - Add: **FTP_SERVER**, **FTP_USERNAME**, **FTP_PASSWORD** (required).
+   - Optional: **FTP_DEPLOY_DIR** (e.g. `/home/cpaneluser/public_html/`), **SITE_URL**, **CLOUDINARY_CLOUD_NAME**.
+
+3. **FTP deploy step fails**
+   - Check **FTP_SERVER**: use the hostname (e.g. `ftp.biz.digitalskillshouse.pk` or your host’s FTP server).
+   - **FTP_DEPLOY_DIR**: for cPanel it’s usually the full path to the folder that should contain the site, e.g. `/home/your_cpanel_username/public_html/` (trailing slash). If you leave it empty, the workflow uses `public_html/` (relative to your FTP user’s home).
+
+4. **Build fails**
+   - See the **Build Next.js** step log. Fix any errors (e.g. missing env, API unreachable) and push again.
+
+---
+
 ### You see `{"ok":true,"message":"BizBranches API Server (PHP)"}` instead of the website
 
 The domain document root is pointing at the **API folder** instead of the folder that contains the **static site** and `api/`:

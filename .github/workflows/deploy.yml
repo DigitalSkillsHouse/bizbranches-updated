@@ -10,13 +10,23 @@ env:
   PHP_VERSION: "8.2"
 
 jobs:
-  # ─────────────────────────────────────────────
-  # Job 1: Deploy PHP backend first (so API is up for static build)
-  # ─────────────────────────────────────────────
   deploy-backend:
     name: Deploy PHP Backend
     runs-on: ubuntu-latest
     steps:
+      - name: Check required secrets
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          if [ -z "$FTP_SERVER" ] || [ -z "$FTP_USERNAME" ] || [ -z "$FTP_PASSWORD" ]; then
+            echo "::error::Set FTP_SERVER, FTP_USERNAME, FTP_PASSWORD in repo Settings > Secrets and variables > Actions"
+            echo "Optional: FTP_DEPLOY_DIR (e.g. /home/user/public_html/), SITE_URL, CLOUDINARY_CLOUD_NAME"
+            exit 1
+          fi
+          echo "Secrets OK"
+
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -37,16 +47,13 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: backend-php/
-          server-dir: ${{ secrets.FTP_DEPLOY_DIR || '/public_html/' }}api/
+          server-dir: ${{ secrets.FTP_DEPLOY_DIR || 'public_html/' }}api/
           dangerous-clean-slate: false
           exclude: |
             **/.git*
             **/.git*/**
             **/.env
 
-  # ─────────────────────────────────────────────
-  # Job 2: Build Next.js static export & deploy to domain root
-  # ─────────────────────────────────────────────
   deploy-frontend:
     name: Build & Deploy Frontend (Static)
     runs-on: ubuntu-latest
@@ -59,23 +66,21 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
 
       - name: Install frontend dependencies
         working-directory: frontend
-        run: npm ci
+        run: npm install
 
       - name: Create frontend .env
         working-directory: frontend
         run: |
           SITE_URL="${{ secrets.SITE_URL }}"
-          if [ -z "$SITE_URL" ]; then SITE_URL="https://biz.digitalskillshouse.pk"; fi
-          cat <<EOF > .env.local
-          NEXT_PUBLIC_BACKEND_URL=${SITE_URL}
-          BACKEND_URL=${SITE_URL}
+          [ -z "$SITE_URL" ] && SITE_URL="https://biz.digitalskillshouse.pk"
+          cat << EOF > .env.local
+          NEXT_PUBLIC_BACKEND_URL=$SITE_URL
+          BACKEND_URL=$SITE_URL
           NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME }}
-          NEXT_PUBLIC_SITE_URL=${SITE_URL}
+          NEXT_PUBLIC_SITE_URL=$SITE_URL
           NEXT_PUBLIC_STATIC_EXPORT=true
           NODE_ENV=production
           EOF
@@ -86,9 +91,17 @@ jobs:
         env:
           NEXT_PUBLIC_STATIC_EXPORT: "true"
 
-      - name: Prepare static deployment
+      - name: Verify build output
         run: |
-          cp cpanel-htaccess frontend/out/.htaccess
+          if [ ! -f frontend/out/index.html ]; then
+            echo "::error::Build did not produce frontend/out/index.html"
+            ls -la frontend/out/ 2>/dev/null || echo "frontend/out/ missing"
+            exit 1
+          fi
+          echo "Build output OK"
+
+      - name: Copy .htaccess to out
+        run: cp cpanel-htaccess frontend/out/.htaccess
 
       - name: Deploy static site to cPanel via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
@@ -97,7 +110,7 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: frontend/out/
-          server-dir: ${{ secrets.FTP_DEPLOY_DIR || '/public_html/' }}
+          server-dir: ${{ secrets.FTP_DEPLOY_DIR || 'public_html/' }}
           dangerous-clean-slate: false
           exclude: |
             **/.git*
