@@ -3,18 +3,33 @@ RewriteEngine On
 # ─── Redirect legacy /business/slug → /slug (permanent) ───
 RewriteRule ^business/(.+)$ /$1 [R=301,L]
 
-# ─── Serve /api/* requests via PHP (bypasses Passenger/Node.js) ───
+# ─── Serve /api/* requests via PHP ───
 RewriteCond %{REQUEST_URI} ^/api(/.*)?$
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^api(/.*)?$ api/index.php [QSA,L]
 
 # ─── Serve static Next.js assets directly ───
-RewriteCond %{REQUEST_URI} ^/_next/static/
+RewriteCond %{REQUEST_URI} ^/_next/
 RewriteRule ^ - [L]
 
-# ─── Serve public files directly (images, manifest, robots.txt, etc.) ───
+# ─── Serve existing files directly (images, manifest, robots.txt, etc.) ───
 RewriteCond %{REQUEST_FILENAME} -f
 RewriteRule ^ - [L]
+
+# ─── Serve existing directories (check for index.html inside) ───
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteCond %{REQUEST_FILENAME}/index.html -f
+RewriteRule ^(.*)/?$ $1/index.html [L]
+
+# ─── Try .html extension for clean URLs (e.g. /about → about.html) ───
+RewriteCond %{REQUEST_FILENAME}.html -f
+RewriteRule ^(.*)$ $1.html [L]
+
+# ─── Fallback: serve index.html for client-side routing ───
+RewriteRule ^ index.html [L]
+
+# ─── Make index.html the default document ───
+DirectoryIndex index.html
 
 # ─── Security: block access to sensitive files ───
 <FilesMatch "^\.env|\.gitignore$">
