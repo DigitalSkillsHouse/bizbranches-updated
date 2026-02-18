@@ -36,12 +36,21 @@ class Response {
             'http://127.0.0.1:3000',
             env('FRONTEND_URL', 'http://localhost:3000'),
         ];
-        $siteUrl = env('NEXT_PUBLIC_SITE_URL');
-        if ($siteUrl) $allowedOrigins[] = $siteUrl;
+        $siteUrl = env('SITE_URL', env('NEXT_PUBLIC_SITE_URL'));
+        if ($siteUrl) {
+            $allowedOrigins[] = $siteUrl;
+            $allowedOrigins[] = rtrim($siteUrl, '/');
+            if (str_starts_with($siteUrl, 'https://')) {
+                $allowedOrigins[] = str_replace('https://', 'http://', $siteUrl);
+            }
+        }
 
         $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-        if ($origin && in_array($origin, $allowedOrigins)) {
+        if ($origin && in_array(rtrim($origin, '/'), array_map(fn($o) => rtrim($o, '/'), $allowedOrigins))) {
             header("Access-Control-Allow-Origin: $origin");
+        } elseif (!$origin && env('APP_ENV') === 'production') {
+            // Same-origin requests (no Origin header) on cPanel single-domain setup
+            header("Access-Control-Allow-Origin: " . ($siteUrl ?: '*'));
         }
         header('Access-Control-Allow-Methods: GET, HEAD, OPTIONS, POST, PUT, PATCH, DELETE');
         header('Access-Control-Allow-Headers: Content-Type, Authorization, x-admin-secret');

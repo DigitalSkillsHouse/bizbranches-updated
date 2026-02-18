@@ -1,4 +1,5 @@
 const isProd = process.env.NODE_ENV === "production";
+const isCpanel = !!process.env.CPANEL_DEPLOY;
 
 const nextConfig = {
   output: "standalone",
@@ -24,6 +25,9 @@ const nextConfig = {
     ]
   },
   async rewrites() {
+    // On cPanel: Apache handles /api/* directly via PHP, no rewrite needed
+    if (isCpanel) return [];
+    // Local dev: proxy /api/* to PHP backend
     const backendUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
     return [
       {

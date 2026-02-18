@@ -11,7 +11,7 @@ env:
 
 jobs:
   # ─────────────────────────────────────────────
-  # Job 1: Build Next.js frontend & deploy via FTP
+  # Job 1: Build Next.js & deploy frontend to domain root
   # ─────────────────────────────────────────────
   deploy-frontend:
     name: Build & Deploy Frontend
@@ -35,26 +35,31 @@ jobs:
         working-directory: frontend
         run: |
           cat <<EOF > .env.local
-          NEXT_PUBLIC_BACKEND_URL=${{ secrets.BACKEND_URL }}
-          BACKEND_URL=${{ secrets.BACKEND_URL }}
+          NEXT_PUBLIC_BACKEND_URL=${{ secrets.SITE_URL }}
+          BACKEND_URL=${{ secrets.SITE_URL }}
           NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME }}
           NEXT_PUBLIC_SITE_URL=${{ secrets.SITE_URL }}
+          CPANEL_DEPLOY=true
           NODE_ENV=production
           EOF
 
       - name: Build Next.js (standalone)
         working-directory: frontend
         run: npm run build
+        env:
+          CPANEL_DEPLOY: "true"
 
-      - name: Prepare standalone deployment package
+      - name: Prepare deployment package
         working-directory: frontend
         run: |
-          # Copy static assets into the standalone output
+          # Copy static assets into standalone output
           cp -r .next/static .next/standalone/.next/static
           cp -r public .next/standalone/public
-          # Copy the cPanel entry point
+          # Copy cPanel entry point
           cp app.js .next/standalone/app.js
-          # Create a minimal package.json for cPanel
+          # Copy root .htaccess for Apache routing
+          cp ../cpanel-htaccess .next/standalone/.htaccess
+          # Create package.json for cPanel Node.js app
           cat <<'PKGJSON' > .next/standalone/package.json
           {
             "name": "bizbranches-frontend",
@@ -73,16 +78,17 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: frontend/.next/standalone/
-          server-dir: ${{ secrets.FTP_FRONTEND_DIR }}
+          server-dir: ${{ secrets.FTP_DEPLOY_DIR }}
           dangerous-clean-slate: false
           exclude: |
             **/.git*
             **/.git*/**
             **/node_modules/**
             **/.env*
+            **/api/**
 
   # ─────────────────────────────────────────────
-  # Job 2: Deploy PHP backend via FTP
+  # Job 2: Deploy PHP backend to /api/ subfolder
   # ─────────────────────────────────────────────
   deploy-backend:
     name: Deploy PHP Backend
@@ -101,40 +107,16 @@ jobs:
         working-directory: backend-php
         run: composer install --no-dev --optimize-autoloader --no-interaction
 
-      - name: Deploy backend to cPanel via FTP
+      - name: Deploy backend to cPanel /api/ via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: backend-php/
-          server-dir: ${{ secrets.FTP_BACKEND_DIR }}
+          server-dir: ${{ secrets.FTP_DEPLOY_DIR }}api/
           dangerous-clean-slate: false
           exclude: |
             **/.git*
             **/.git*/**
             **/.env
-
-  # ─────────────────────────────────────────────
-  # Job 3: Run database migrations (on first deploy or schema changes)
-  # ─────────────────────────────────────────────
-  migrate-db:
-    name: Run Migrations (if needed)
-    runs-on: ubuntu-latest
-    needs: [deploy-backend]
-    if: contains(github.event.head_commit.message, '[migrate]')
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Run SQL migration via SSH
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          password: ${{ secrets.SSH_PASSWORD }}
-          port: ${{ secrets.SSH_PORT || 22 }}
-          script: |
-            cd ${{ secrets.FTP_BACKEND_DIR }}
-            mysql -u ${{ secrets.DB_USER }} -p'${{ secrets.DB_PASS }}' ${{ secrets.DB_NAME }} < migrations/001_create_tables.sql
-            echo "Migration completed successfully"

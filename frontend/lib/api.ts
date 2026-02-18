@@ -1,6 +1,10 @@
 /**
  * Single source for backend API base URL (server-side only).
- * Client-side requests use /api/* which is rewritten to the backend.
+ * 
+ * On cPanel: frontend and backend share the same domain.
+ * Apache routes /api/* to PHP, so BACKEND_URL = SITE_URL.
+ * 
+ * In dev: /api/* is proxied to the PHP backend via Next.js rewrites.
  */
 export function getBackendUrl(): string {
   return (

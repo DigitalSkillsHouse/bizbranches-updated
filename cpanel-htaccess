@@ -1,0 +1,36 @@
+RewriteEngine On
+
+# ─── Serve /api/* requests via PHP (bypasses Passenger/Node.js) ───
+RewriteCond %{REQUEST_URI} ^/api(/.*)?$
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^api(/.*)?$ api/index.php [QSA,L]
+
+# ─── Serve static Next.js assets directly ───
+RewriteCond %{REQUEST_URI} ^/_next/static/
+RewriteRule ^ - [L]
+
+# ─── Serve public files directly (images, manifest, robots.txt, etc.) ───
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^ - [L]
+
+# ─── Security: block access to sensitive files ───
+<FilesMatch "^\.env|\.gitignore$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# ─── Gzip compression ───
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/css application/json
+    AddOutputFilterByType DEFLATE application/javascript text/javascript
+</IfModule>
+
+# ─── Browser caching for static assets ───
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType image/webp "access plus 1 year"
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
+</IfModule>
