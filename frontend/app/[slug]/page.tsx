@@ -1,19 +1,12 @@
-import { redirect } from "next/navigation";
 import { BusinessSchema } from "@/components/business-schema";
 import { BreadcrumbSchema } from "@/components/breadcrumb-schema";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { getBackendUrl } from "@/lib/api";
 import { logger } from "@/lib/logger";
-import { getBuildSlugs } from "@/lib/build-slugs";
 import BusinessDetailPage from "../business/[id]/page";
 
-export async function generateStaticParams() {
-  try {
-    const { businesses } = await getBuildSlugs();
-    return businesses.map((b) => ({ slug: b.slug }));
-  } catch {
-    return [];
-  }
+export function generateStaticParams() {
+  return [];
 }
 
 function serializeId(doc: any): any {
@@ -162,11 +155,7 @@ export default async function BusinessBySlugPage({
     }
     business = serializeId(bizData.business);
 
-    // Redirect to slug URL when user visited by id (pretty URL + SEO)
-    const isObjectId = /^[a-f0-9]{24}$/i.test(slug);
-    if (isObjectId && business.slug && business.slug !== slug) {
-      redirect(`/${encodeURIComponent(business.slug)}`);
-    }
+    // Note: redirect removed for static export compatibility
 
     // Fetch related businesses (same category and city)
     if (business?.category && business?.city) {

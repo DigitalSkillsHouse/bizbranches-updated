@@ -2,16 +2,10 @@ import { Metadata } from "next"
 import { SITE_NAME, SITE_URL } from "@/lib/site"
 import { citySlugToName } from "@/lib/city-slug"
 import { getBackendUrl } from "@/lib/api"
-import { getBuildSlugs } from "@/lib/build-slugs"
 import { CityCategoryAreaPageClient } from "./city-category-area-page-client"
 
-export async function generateStaticParams() {
-  try {
-    const { cityCategoryArea } = await getBuildSlugs();
-    return cityCategoryArea.map(({ slug, category, area }) => ({ slug, category, area }));
-  } catch {
-    return [];
-  }
+export function generateStaticParams() {
+  return [];
 }
 
 function slugToTitle(slug: string): string {
