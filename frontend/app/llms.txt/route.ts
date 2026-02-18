@@ -1,6 +1,8 @@
 import { SITE_URL, SITE_NAME } from '@/lib/site';
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-static';
+
 /**
  * llms.txt — machine-readable description for LLMs and AI systems.
  * Publicly accessible at /llms.txt. Simple, factual, no marketing fluff.

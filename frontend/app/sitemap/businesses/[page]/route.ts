@@ -4,6 +4,7 @@ import { getBackendUrl } from "@/lib/api";
 
 const SITEMAP_BUSINESS_LIMIT = 45000;
 
+export const dynamic = 'force-static';
 export const revalidate = 300;
 
 /**

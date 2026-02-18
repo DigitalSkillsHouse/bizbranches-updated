@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 
 import { getBackendUrl } from '@/lib/api'
 
+export const dynamic = 'force-static'
+
 /** POST /api/business/check-duplicates – proxy to backend for duplicate validation */
 export async function POST(request: NextRequest) {
   try {

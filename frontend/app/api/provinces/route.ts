@@ -1,5 +1,7 @@
 import { NextRequest } from "next/server"
 
+export const dynamic = 'force-static'
+
 const provinces = [
   { id: "Punjab", name: "Punjab" },
   { id: "Sindh", name: "Sindh" },

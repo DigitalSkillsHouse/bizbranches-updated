@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+export const dynamic = 'force-static'
+
 /**
  * Returns approximate user lat/lng from IP (fallback when browser geolocation is denied).
  * Uses ip-api.com (free, 45 req/min). Store in session only; do not log.

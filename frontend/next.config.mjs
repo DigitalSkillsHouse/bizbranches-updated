@@ -17,6 +17,7 @@ const nextConfig = {
   reactStrictMode: true,
   trailingSlash: false,
   async redirects() {
+    if (process.env.NEXT_PUBLIC_STATIC_EXPORT) return [];
     return [
       { source: '/business/:slug', destination: '/:slug', permanent: true },
       { source: '/city/:path*/business/:slug', destination: '/:slug', permanent: true },

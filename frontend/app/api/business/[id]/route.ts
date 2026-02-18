@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { getBackendUrl } from '@/lib/api';
 
+export const dynamic = 'force-static'
+
 /**
  * GET /api/business/[id] - Proxy to backend for single business by slug or MongoDB _id.
  * Backend resolves both slug (pretty URL) and 24-char ObjectId.

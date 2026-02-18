@@ -1,6 +1,8 @@
 import { NextRequest } from "next/server"
 import { getBackendUrl } from "@/lib/api"
 
+export const dynamic = 'force-static'
+
 export async function GET(req: NextRequest) {
   try {
     const url = `${getBackendUrl()}/api/cities/countries`

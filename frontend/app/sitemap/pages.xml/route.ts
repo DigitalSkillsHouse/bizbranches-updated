@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { urlEntry } from "@/lib/sitemap";
 import { getBackendUrl } from "@/lib/api";
 
+export const dynamic = 'force-static';
 export const revalidate = 3600;
 
 /**
