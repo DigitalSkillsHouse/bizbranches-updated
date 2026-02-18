@@ -1,0 +1,48 @@
+# Dependencies
+node_modules/
+
+# Next.js build output
+.next/
+out/
+
+# Build artifacts
+dist/
+build/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment variables
+.env*
+!.env.example
+*.zip
+
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Editor directories and files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Local testing
+coverage/
+*.local
+*.log
+
+# Optional: Ignore package-lock if using yarn/pnpm
+# package-lock.json
+
+# Static export cache
+.next/cache/
+
+# TypeScript build info
+*.tsbuildinfo

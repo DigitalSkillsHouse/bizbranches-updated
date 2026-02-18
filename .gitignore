@@ -1,0 +1,35 @@
+node_modules/
+.next/
+out/
+dist/
+build/
+.env
+.env.local
+.env.production
+.env*.local
+!.env.example
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# PHP
+backend-php/vendor/
+
+# FTP deploy state
+.ftp-deploy-sync-state.json
+
+# Large data files (seed via migration, not git)
+backend-php/scripts/businesses.json
+backend-php/scripts/reviews.json

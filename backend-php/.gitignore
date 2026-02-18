@@ -1,0 +1,9 @@
+vendor/
+.env
+*.log
+scripts/businesses.json
+scripts/categories.json
+scripts/cities.json
+scripts/reviews.json
+scripts/users.json
+scripts/mongo_id_map.json
