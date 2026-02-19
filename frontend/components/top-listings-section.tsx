@@ -108,18 +108,17 @@ export function TopListingsSection({ initialRecent = [] }: { initialRecent?: any
   )
   const [listings, setListings] = useState<(typeof mockBusinesses)[number][]>(initialMapped)
   useEffect(() => {
-    if (initialMapped.length > 0) return
     const load = async () => {
       try {
-        const res = await fetch(`/api/business/recent?limit=12`)
+        const res = await fetch(`/api/business/recent?limit=12`, { cache: "no-store" })
         const json = await res.json()
-        if (json?.ok && Array.isArray(json.businesses)) {
+        if (json?.ok && Array.isArray(json.businesses) && json.businesses.length > 0) {
           setListings(json.businesses.map(mapFeatured))
         }
       } catch {}
     }
     load()
-  }, [initialMapped.length])
+  }, [])
   const [emblaRef, emblaApi] = useEmblaCarousel({ 
     loop: true, 
     align: "start",
@@ -268,8 +267,8 @@ export function TopListingsSection({ initialRecent = [] }: { initialRecent?: any
                           </Link>
                         </div>
                         <div className="grid grid-cols-1 gap-3 sm:gap-4 flex-1">
-                          {pair.map((b) => (
-                            <ListingCard key={b.id} business={toListingBusiness(b)} variant="mini" />
+                          {pair.map((b, pairItemIndex) => (
+                            <ListingCard key={`${String(b.slug ?? b.id)}-${idx}-${pairItemIndex}`} business={toListingBusiness(b)} variant="mini" />
                           ))}
                         </div>
                       </div>
@@ -402,8 +401,8 @@ export function TopListingsSection({ initialRecent = [] }: { initialRecent?: any
                           </Link>
                         </div>
                         <div className="grid grid-cols-1 gap-3 sm:gap-4 flex-1">
-                          {pair.map((b) => (
-                            <ListingCard key={b.id} business={toListingBusiness(b)} variant="mini" />
+                          {pair.map((b, pairItemIndex) => (
+                            <ListingCard key={`fb-${String(b.slug ?? b.id)}-${idx}-${pairItemIndex}`} business={toListingBusiness(b)} variant="mini" />
                           ))}
                         </div>
                       </div>
