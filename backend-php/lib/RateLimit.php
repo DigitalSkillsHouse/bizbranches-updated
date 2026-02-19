@@ -35,7 +35,8 @@ class RateLimit {
     }
 
     public static function globalCheck(string $ip): array {
-        return self::check($ip, 'global', 300);
+        $max = (int) env('RATE_LIMIT_PER_MINUTE', '900');
+        return self::check($ip, 'global', $max > 0 ? $max : 900);
     }
 
     public static function getClientIp(): string {
