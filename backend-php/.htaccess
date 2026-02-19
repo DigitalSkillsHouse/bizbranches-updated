@@ -1,14 +1,15 @@
+# Disable directory listing so /api/ does not show folder contents
+Options -Indexes
+DirectoryIndex index.php
+
 RewriteEngine On
 
 # Handle CORS preflight OPTIONS requests
 RewriteCond %{REQUEST_METHOD} OPTIONS
 RewriteRule ^(.*)$ index.php [QSA,L]
 
-# If the request is for an existing file or directory, serve it directly
+# If the request is for an existing file, serve it; otherwise route through index.php
 RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-
-# Route everything through index.php
 RewriteRule ^(.*)$ index.php [QSA,L]
 
 # PHP settings
