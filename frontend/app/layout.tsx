@@ -117,6 +117,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/bizbranches.pk.png" />
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#0f172a" />
+        <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <link rel="alternate" type="text/plain" href={`${SITE_URL}/llms.txt`} title="Site description for AI and LLMs" />

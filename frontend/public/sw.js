@@ -2,8 +2,9 @@
  * BizBranches PWA Service Worker
  * - Cache-first: static assets (JS, CSS, images, fonts)
  * - Network-first: API and document, fallback to cache or offline page
+ * - Only handles http(s) requests; ignores chrome-extension:// etc. to avoid Cache errors
  */
-const CACHE_NAME = "bizbranches-v1";
+const CACHE_NAME = "bizbranches-v3";
 const OFFLINE_URL = "/offline.html";
 
 const STATIC_PATTERNS = [
@@ -18,6 +19,24 @@ function isStaticAsset(url) {
 
 function isApiRequest(url) {
   return new URL(url).pathname.startsWith("/api/");
+}
+
+/** Only cache http/https requests; Cache API does not support chrome-extension: etc. */
+function isCacheableRequest(request) {
+  try {
+    const u = request.url;
+    return u.startsWith("http:") || u.startsWith("https:");
+  } catch (_) {
+    return false;
+  }
+}
+
+/** Safely cache response only when allowed (same-origin or CORS, non-opaque, ok). */
+function safeCachePut(cache, request, response) {
+  if (!isCacheableRequest(request)) return Promise.resolve();
+  if (!response || !response.ok || response.status !== 200) return Promise.resolve();
+  if (response.type === "opaque") return Promise.resolve();
+  return cache.put(request, response.clone()).catch(function () {});
 }
 
 function getOfflinePage() {
@@ -47,18 +66,20 @@ self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = request.url;
   if (request.method !== "GET") return;
+  if (!isCacheableRequest(request)) return;
 
   if (request.mode === "navigate") {
     event.respondWith(
       fetch(request)
         .then((res) => {
-          const clone = res.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          caches.open(CACHE_NAME).then((cache) => safeCachePut(cache, request, res));
           return res;
         })
-        .catch(() =>
-          caches.match(request).then((cached) => cached || caches.match("/").then((r) => r || getOfflinePage()))
-        )
+        .catch(function () {
+          return caches.match(request).then(function (cached) {
+            return cached || getOfflinePage();
+          });
+        })
     );
     return;
   }
@@ -72,8 +93,7 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       caches.match(request).then((cached) =>
         cached || fetch(request).then((res) => {
-          const clone = res.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          caches.open(CACHE_NAME).then((cache) => safeCachePut(cache, request, res));
           return res;
         })
       )
@@ -84,10 +104,11 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(
     fetch(request)
       .then((res) => {
-        const clone = res.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+        caches.open(CACHE_NAME).then((cache) => safeCachePut(cache, request, res));
         return res;
       })
-      .catch(() => caches.match(request))
+      .catch(function () {
+        return caches.match(request) || Promise.resolve(undefined);
+      })
   );
 });

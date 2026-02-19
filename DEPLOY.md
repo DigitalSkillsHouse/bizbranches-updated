@@ -30,4 +30,6 @@ Your API is already at https://biz.digitalskillshouse.pk/api/ (PHP). Keep the ba
 - Click a listing (e.g. Digital Skills House)
 - You should land on the listing detail page (e.g. https://biz.digitalskillshouse.pk/digital-skills-house) with full details.
 
-If listing URLs still 404, confirm `.htaccess` (Apache) or `_redirects` (Netlify) is in the deployed folder and that SPA fallback is enabled.
+**If listing URLs show the homepage but the URL is correct:** The service worker was previously returning the cached homepage on failed requests. Deploy the updated `sw.js` (v3), then ask users to hard-refresh (Ctrl+Shift+R) or clear site data so the new worker installs.
+
+**If listing URLs 404:** Confirm `.htaccess` (Apache) or `_redirects` (Netlify) is in the deployed folder so SPA fallback serves `index.html` for paths like `/digital-skills-house`.
