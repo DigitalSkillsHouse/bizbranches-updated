@@ -20,7 +20,9 @@ class Response {
     }
 
     public static function cached(array $data, string $cacheControl = 's-maxage=300, stale-while-revalidate=600'): void {
-        self::json(array_merge(['ok' => true], $data), 200, ['Cache-Control' => $cacheControl]);
+        $noCache = (env('DISABLE_CACHE', '') === '1' || env('DISABLE_CACHE', '') === 'true' || env('APP_ENV', '') === 'testing' || env('APP_ENV', '') === 'local');
+        $header = $noCache ? 'no-store, no-cache, must-revalidate' : $cacheControl;
+        self::json(array_merge(['ok' => true], $data), 200, ['Cache-Control' => $header]);
     }
 
     public static function setSecurityHeaders(): void {

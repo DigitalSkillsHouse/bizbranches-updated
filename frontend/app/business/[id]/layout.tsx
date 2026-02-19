@@ -16,7 +16,7 @@ export async function generateMetadata({
 
   try {
     const res = await fetch(`${getBackendUrl()}/api/business/${encodeURIComponent(id)}`, {
-      next: { revalidate: 3600 },
+      cache: "no-store",
     });
     if (res.ok) {
       const data = await res.json();

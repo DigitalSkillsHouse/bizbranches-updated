@@ -1,27 +1,10 @@
 /**
  * BizBranches PWA Service Worker
- * - Cache-first: static assets (JS, CSS, images, fonts)
- * - Network-first: API and document, fallback to cache or offline page
- * - Only handles http(s) requests; ignores chrome-extension:// etc. to avoid Cache errors
+ * Caching disabled so testing always gets fresh responses (no stale cache).
+ * All requests: network-only; offline fallback only for navigate.
  */
-const CACHE_NAME = "bizbranches-v3";
-const OFFLINE_URL = "/offline.html";
+const CACHE_NAME = "bizbranches-v4-no-cache";
 
-const STATIC_PATTERNS = [
-  /\/_next\/static\//,
-  /\.(js|css|woff2?|png|jpg|jpeg|webp|svg|ico)(\?.*)?$/i,
-];
-
-function isStaticAsset(url) {
-  const path = new URL(url).pathname;
-  return STATIC_PATTERNS.some((re) => re.test(path));
-}
-
-function isApiRequest(url) {
-  return new URL(url).pathname.startsWith("/api/");
-}
-
-/** Only cache http/https requests; Cache API does not support chrome-extension: etc. */
 function isCacheableRequest(request) {
   try {
     const u = request.url;
@@ -29,14 +12,6 @@ function isCacheableRequest(request) {
   } catch (_) {
     return false;
   }
-}
-
-/** Safely cache response only when allowed (same-origin or CORS, non-opaque, ok). */
-function safeCachePut(cache, request, response) {
-  if (!isCacheableRequest(request)) return Promise.resolve();
-  if (!response || !response.ok || response.status !== 200) return Promise.resolve();
-  if (response.type === "opaque") return Promise.resolve();
-  return cache.put(request, response.clone()).catch(function () {});
 }
 
 function getOfflinePage() {
@@ -47,68 +22,24 @@ function getOfflinePage() {
 }
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) =>
-      cache.addAll(["/", "/manifest.json", "/bizbranches.pk.png"]).catch(() => {})
-    ).then(() => self.skipWaiting())
-  );
+  event.waitUntil(Promise.resolve().then(() => self.skipWaiting()));
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
-    ).then(() => self.clients.claim())
+    caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k)))).then(() => self.clients.claim())
   );
 });
 
 self.addEventListener("fetch", (event) => {
   const { request } = event;
-  const url = request.url;
   if (request.method !== "GET") return;
   if (!isCacheableRequest(request)) return;
 
-  if (request.mode === "navigate") {
-    event.respondWith(
-      fetch(request)
-        .then((res) => {
-          caches.open(CACHE_NAME).then((cache) => safeCachePut(cache, request, res));
-          return res;
-        })
-        .catch(function () {
-          return caches.match(request).then(function (cached) {
-            return cached || getOfflinePage();
-          });
-        })
-    );
-    return;
-  }
-
-  if (isApiRequest(url)) {
-    event.respondWith(fetch(request));
-    return;
-  }
-
-  if (isStaticAsset(url)) {
-    event.respondWith(
-      caches.match(request).then((cached) =>
-        cached || fetch(request).then((res) => {
-          caches.open(CACHE_NAME).then((cache) => safeCachePut(cache, request, res));
-          return res;
-        })
-      )
-    );
-    return;
-  }
-
   event.respondWith(
-    fetch(request)
-      .then((res) => {
-        caches.open(CACHE_NAME).then((cache) => safeCachePut(cache, request, res));
-        return res;
-      })
-      .catch(function () {
-        return caches.match(request) || Promise.resolve(undefined);
-      })
+    fetch(request).catch(function () {
+      if (request.mode === "navigate") return getOfflinePage();
+      return undefined;
+    })
   );
 });

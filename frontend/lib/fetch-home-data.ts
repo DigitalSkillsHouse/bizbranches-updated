@@ -1,7 +1,5 @@
 import { getBackendUrl } from "@/lib/api";
 
-const CACHE_REVALIDATE = 300; // 5 min
-
 export async function fetchHomePageData() {
   let categories: any[] = [];
   let recent: any[] = [];
@@ -10,11 +8,11 @@ export async function fetchHomePageData() {
   try {
     const [categoriesRes, recentRes] = await Promise.all([
       fetch(`${base}/api/categories?limit=24`, {
-        next: { revalidate: CACHE_REVALIDATE },
+        cache: "no-store",
         headers: { "Content-Type": "application/json" },
       }),
       fetch(`${base}/api/business/recent?limit=12`, {
-        next: { revalidate: CACHE_REVALIDATE },
+        cache: "no-store",
         headers: { "Content-Type": "application/json" },
       }),
     ]);

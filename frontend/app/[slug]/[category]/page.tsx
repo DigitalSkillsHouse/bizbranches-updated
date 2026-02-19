@@ -52,7 +52,7 @@ export default async function CityCategoryPage({
   try {
     const res = await fetch(
       `${getBackendUrl()}/api/business?city=${encodeURIComponent(cityName)}&category=${encodeURIComponent(category)}&limit=${limit}&page=1`,
-      { next: { revalidate: 300 } }
+      { cache: "no-store" }
     )
     const data = await res.json().catch(() => ({}))
     if (data?.ok && Array.isArray(data.businesses)) businesses = data.businesses

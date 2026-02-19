@@ -58,7 +58,7 @@ export default async function CityCategoryAreaPage({
       limit: String(limit),
       page: "1",
     })
-    const res = await fetch(`${getBackendUrl()}/api/business?${q.toString()}`, { next: { revalidate: 300 } })
+    const res = await fetch(`${getBackendUrl()}/api/business?${q.toString()}`, { cache: "no-store" })
     const data = await res.json().catch(() => ({}))
     if (data?.ok && Array.isArray(data.businesses)) businesses = data.businesses
   } catch {

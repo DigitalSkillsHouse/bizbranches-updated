@@ -15,7 +15,7 @@ export async function generateMetadata({
   let categoryName = prettyName;
 
   try {
-    const res = await fetch(`${getBackendUrl()}/api/categories?slug=${encodeURIComponent(slug)}`, { next: { revalidate: 3600 } });
+    const res = await fetch(`${getBackendUrl()}/api/categories?slug=${encodeURIComponent(slug)}`, { cache: "no-store" });
     if (res.ok) {
       const data = await res.json();
       if (data?.category?.name) categoryName = data.category.name;
