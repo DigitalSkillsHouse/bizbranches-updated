@@ -48,19 +48,33 @@ export default function BusinessDetailPage({
   const [showAllReviews, setShowAllReviews] = useState(false)
   const [showFullDescription, setShowFullDescription] = useState(false)
   const { toast } = useToast()
+
+  // Client-safe API base: relative /api works when frontend and API share origin; use env when set
+  const apiBase = typeof window !== "undefined"
+    ? (process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "") || ""
+    : ""
+
   useEffect(() => {
     const fetchBusiness = async () => {
       if (initialBusiness) return
-      
+      if (!businessId) return
+
       try {
         setLoading(true)
-        const response = await fetch(`/api/business/${encodeURIComponent(businessId)}`)
-        if (response.ok) {
-          const data = await response.json()
+        setBusiness(null)
+        const url = apiBase
+          ? `${apiBase}/api/business/${encodeURIComponent(businessId)}`
+          : `/api/business/${encodeURIComponent(businessId)}`
+        const response = await fetch(url)
+        const data = await response.json().catch(() => ({}))
+        if (response.ok && data?.business != null && data?.ok !== false) {
           setBusiness(data.business)
+        } else {
+          setBusiness(null)
         }
       } catch (error) {
         logger.error("Error fetching business:", error)
+        setBusiness(null)
       } finally {
         setLoading(false)
       }
@@ -69,7 +83,7 @@ export default function BusinessDetailPage({
     if (businessId && !initialBusiness) {
       fetchBusiness()
     }
-  }, [businessId, initialBusiness])
+  }, [businessId, initialBusiness, apiBase])
 
   // Fetch existing reviews
   useEffect(() => {
@@ -200,10 +214,18 @@ export default function BusinessDetailPage({
 
   if (!business) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="text-center max-w-md">
           <h1 className="text-2xl font-bold text-gray-800 mb-4">Business Not Found</h1>
-          <p className="text-gray-600">The business you're looking for doesn't exist.</p>
+          <p className="text-gray-600 mb-6">The business you're looking for doesn't exist or the link may be incorrect.</p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Button asChild>
+              <Link href="/search">Back to Search</Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href="/">Home</Link>
+            </Button>
+          </div>
         </div>
       </div>
     )
