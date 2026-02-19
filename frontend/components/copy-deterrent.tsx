@@ -3,15 +3,15 @@
 import { useEffect } from "react"
 
 /**
- * Soft content-protection deterrents. These do NOT fully prevent:
- * - DevTools (F12 / Inspect) — browsers do not allow sites to block these.
- * - View Source — users can use curl, cache, or disable JS.
- * - Copying — users can screenshot or type manually.
- * They only make casual right-click copy/save and selection harder.
- * May affect accessibility (e.g. copying contact info); use with care.
+ * Soft content-protection deterrents. By default OFF so right-click and DevTools work.
+ * Set NEXT_PUBLIC_ENABLE_COPY_DETERRENT=true to block right-click / F12 / Ctrl+U.
  */
+const ENABLED = process.env.NEXT_PUBLIC_ENABLE_COPY_DETERRENT === "true"
+
 export function CopyDeterrent() {
   useEffect(() => {
+    if (!ENABLED) return
+
     const body = document.body
 
     const preventContextMenu = (e: MouseEvent) => {
