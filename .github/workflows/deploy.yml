@@ -53,6 +53,10 @@ jobs:
             **/.git*
             **/.git*/**
             **/.env
+            **/scripts/*.json
+            **/scripts/mongo_id_map.json
+            **/migrations/**
+            **/run-migration.php
 
   deploy-frontend:
     name: Build & Deploy Frontend (Static)
