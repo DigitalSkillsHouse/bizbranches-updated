@@ -29,25 +29,61 @@ type ValidationResult = { valid: true } | { valid: false; reason: string };
 
 async function validateFileForSlot(file: File, entry: FileEntry): Promise<ValidationResult> {
   try {
-    const text = await file.slice(0, 50000).text();
-    let arr: unknown[];
+    const chunkSize = Math.min(file.size, 2 * 1024 * 1024);
+    const text = await file.slice(0, chunkSize).text();
+
+    if (!text.trimStart().startsWith("[")) {
+      return { valid: false, reason: "File must be a JSON array (should start with '[')." };
+    }
+
+    let firstObj: Record<string, unknown> | null = null;
+
     try {
-      const full = text.endsWith("]") ? text : text + "]";
-      arr = JSON.parse(full);
-    } catch {
-      try {
-        const bracketIdx = text.indexOf("},{");
-        if (bracketIdx < 0) return { valid: false, reason: "Not valid JSON" };
-        const partial = text.substring(0, bracketIdx + 1) + "]";
-        arr = JSON.parse(partial);
-      } catch {
-        return { valid: false, reason: "Not valid JSON" };
+      const full = text.trimEnd().endsWith("]") ? text : text + "]";
+      const parsed = JSON.parse(full);
+      if (Array.isArray(parsed) && parsed.length > 0) firstObj = parsed[0];
+    } catch { /* file is too large to parse as a whole chunk, try partial */ }
+
+    if (!firstObj) {
+      const sepMatch = text.match(/\},\s*\{/);
+      if (sepMatch && sepMatch.index != null) {
+        try {
+          const partial = text.substring(0, sepMatch.index + 1) + "]";
+          const parsed = JSON.parse(partial);
+          if (Array.isArray(parsed) && parsed.length > 0) firstObj = parsed[0];
+        } catch { /* still can't parse, try field scanning */ }
       }
     }
-    if (!Array.isArray(arr) || arr.length === 0) return { valid: false, reason: "Empty array" };
 
-    const first = arr[0] as Record<string, unknown>;
-    const keys = Object.keys(first);
+    if (!firstObj) {
+      const fieldNames: string[] = [];
+      const fieldRegex = /"(\w+)"\s*:/g;
+      let m;
+      const scanText = text.substring(0, 5000);
+      while ((m = fieldRegex.exec(scanText)) !== null) {
+        if (m[1] && !fieldNames.includes(m[1]) && m[1] !== "$oid" && m[1] !== "$date" && m[1] !== "$numberLong") {
+          fieldNames.push(m[1]);
+        }
+      }
+
+      if (fieldNames.length === 0) {
+        return { valid: false, reason: "Could not detect any fields in this JSON file." };
+      }
+
+      for (const req of entry.requiredFields) {
+        if (!fieldNames.includes(req)) {
+          return { valid: false, reason: `Missing required field "${req}". This doesn't look like ${entry.label} data. Found fields: ${fieldNames.slice(0, 8).join(", ")}` };
+        }
+      }
+      for (const forbidden of entry.forbiddenFields) {
+        if (fieldNames.includes(forbidden)) {
+          return { valid: false, reason: `Found field "${forbidden}" which belongs to a different collection — not ${entry.label}.` };
+        }
+      }
+      return { valid: true };
+    }
+
+    const keys = getAllKeys(firstObj);
 
     for (const req of entry.requiredFields) {
       if (!keys.includes(req)) {
@@ -63,6 +99,19 @@ async function validateFileForSlot(file: File, entry: FileEntry): Promise<Valida
   } catch {
     return { valid: false, reason: "Could not read file" };
   }
+}
+
+function getAllKeys(obj: Record<string, unknown>): string[] {
+  const keys: string[] = [];
+  for (const [k, v] of Object.entries(obj)) {
+    keys.push(k);
+    if (v && typeof v === "object" && !Array.isArray(v)) {
+      for (const sub of Object.keys(v as Record<string, unknown>)) {
+        if (!sub.startsWith("$")) keys.push(sub);
+      }
+    }
+  }
+  return keys;
 }
 
 export default function AdminImportPage() {
