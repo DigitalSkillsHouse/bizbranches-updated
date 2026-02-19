@@ -11,35 +11,59 @@ function registerAdminRoutes(Router $router): void {
         if ($headerSecret !== $adminSecret) Response::error('Unauthorized', 401);
 
         $scriptDir = __DIR__ . '/../scripts';
-        $allowed = ['categories' => 'categories.json', 'cities' => 'cities.json', 'businesses' => 'businesses.json', 'reviews' => 'reviews.json', 'users' => 'users.json'];
+        $allowed = [
+            'categories' => 'categories.json',
+            'cities'     => 'cities.json',
+            'businesses' => 'businesses.json',
+            'reviews'    => 'reviews.json',
+            'users'      => 'users.json',
+        ];
         $saved = [];
+        $importCollections = [];
 
         foreach ($allowed as $key => $filename) {
             if (empty($_FILES[$key]['tmp_name']) || !is_uploaded_file($_FILES[$key]['tmp_name'])) continue;
+
+            $tmpContent = file_get_contents($_FILES[$key]['tmp_name']);
+            $testJson = json_decode($tmpContent, true);
+            if (!is_array($testJson) || empty($testJson)) {
+                Response::error("File uploaded for '$key' is not valid JSON or is empty.", 400);
+            }
+
             $path = $scriptDir . '/' . $filename;
-            if (move_uploaded_file($_FILES[$key]['tmp_name'], $path)) $saved[] = $filename;
+            if (move_uploaded_file($_FILES[$key]['tmp_name'], $path)) {
+                $saved[] = $filename;
+                $importCollections[] = $key;
+            }
         }
 
         if (empty($saved)) {
             Response::error('No valid JSON files uploaded. Use form fields: categories, cities, businesses, reviews, users.', 400);
         }
 
+        $GLOBALS['import_only'] = $importCollections;
+
         define('MIGRATION_SILENT', true);
         ob_start();
         try {
-            require_once $scriptDir . '/migrate_from_mongodb.php';
+            require $scriptDir . '/migrate_from_mongodb.php';
+            $stats = runMongoMigration();
         } catch (Throwable $e) {
             ob_end_clean();
             Logger::error('Import error:', $e->getMessage());
             Response::error('Import failed: ' . $e->getMessage(), 500);
         }
         ob_end_clean();
-        $stats = $GLOBALS['migration_stats'] ?? [];
+
+        $errorDetails = $stats['error_details'] ?? [];
+        unset($stats['error_details']);
 
         Response::success([
-            'message' => 'Import completed',
+            'message'     => empty($errorDetails) ? 'Import completed successfully' : 'Import completed with some errors',
             'files_saved' => $saved,
-            'stats' => $stats,
+            'collections_imported' => $importCollections,
+            'stats'       => $stats,
+            'errors'      => $errorDetails,
         ]);
     });
 
