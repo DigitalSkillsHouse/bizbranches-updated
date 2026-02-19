@@ -1,8 +1,18 @@
 import { SITE_NAME, SITE_URL } from "@/lib/site";
+import { getBuildSlugs } from "@/lib/build-slugs";
 import BusinessDetailPage from "../business/[id]/page";
 
-export function generateStaticParams() {
-  return [{ slug: '_placeholder' }];
+const RESERVED_SLUGS = new Set(["search", "add", "category", "city", "about", "contact", "admin", "api", "pending", "sitemap", "_next", "static"]);
+
+export async function generateStaticParams() {
+  try {
+    const { businesses } = await getBuildSlugs();
+    const list = (businesses || []).filter((b) => b?.slug && !RESERVED_SLUGS.has(String(b.slug).toLowerCase()));
+    if (list.length > 0) return list;
+  } catch (_) {
+    // API unreachable at build time
+  }
+  return [{ slug: "_placeholder" }];
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
