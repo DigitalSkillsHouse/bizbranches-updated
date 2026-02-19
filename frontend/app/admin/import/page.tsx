@@ -9,11 +9,11 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Upload, FileJson, Loader2, CheckCircle2, XCircle } from "lucide-react";
 
 const FILES = [
-  { key: "categories", label: "Categories (categories.json)", required: false },
-  { key: "cities", label: "Cities (cities.json)", required: false },
-  { key: "businesses", label: "Businesses (businesses.json)", required: false },
-  { key: "reviews", label: "Reviews (reviews.json)", required: false },
-  { key: "users", label: "Users (users.json)", required: false },
+  { key: "categories", label: "Categories", file: "categories.json", table: "categories + subcategories" },
+  { key: "cities", label: "Cities", file: "cities.json", table: "cities" },
+  { key: "businesses", label: "Businesses", file: "businesses.json", table: "businesses" },
+  { key: "reviews", label: "Reviews", file: "reviews.json", table: "reviews" },
+  { key: "users", label: "Users", file: "users.json", table: "users" },
 ] as const;
 
 export default function AdminImportPage() {
@@ -94,7 +94,9 @@ export default function AdminImportPage() {
             Import MongoDB data to MySQL
           </CardTitle>
           <CardDescription>
-            Upload exported JSON files to import categories, cities, businesses, reviews, and users into the SQL database. Tables must already exist (run the SQL migration in phpMyAdmin first).
+            Upload your MongoDB-exported JSON files to import data into MySQL.
+            Each file goes into its own table. Uses ON DUPLICATE KEY UPDATE so existing records are updated, not duplicated.
+            Large files (businesses.json) may take a few minutes.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -114,19 +116,23 @@ export default function AdminImportPage() {
 
             <div className="space-y-4">
               <Label>JSON files (upload one or more)</Label>
-              {FILES.map(({ key, label }) => (
-                <div key={key} className="flex items-center gap-4">
-                  <Input
-                    type="file"
-                    accept=".json,application/json"
-                    onChange={(e) => onFileChange(key, e.target.files?.[0] ?? null)}
-                    className="flex-1"
-                  />
-                  {files[key] && (
-                    <span className="text-sm text-muted-foreground truncate max-w-[180px]">
-                      {files[key]?.name}
-                    </span>
-                  )}
+              {FILES.map(({ key, label, file, table }) => (
+                <div key={key} className="rounded-lg border p-3 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">{label}</span>
+                    <span className="text-xs text-muted-foreground">{file} → {table}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Input
+                      type="file"
+                      accept=".json,application/json"
+                      onChange={(e) => onFileChange(key, e.target.files?.[0] ?? null)}
+                      className="flex-1"
+                    />
+                    {files[key] && (
+                      <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0" />
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
