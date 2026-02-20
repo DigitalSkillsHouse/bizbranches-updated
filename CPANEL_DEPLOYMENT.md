@@ -5,8 +5,8 @@
 The frontend is built as a **static export** (HTML/CSS/JS). cPanel serves these files with Apache; **no Node.js app** is required.
 
 ```
-biz.digitalskillshouse.pk/     → Static HTML/JS (Apache)
-biz.digitalskillshouse.pk/api/* → PHP backend (Apache)
+bizbranches.pk/     → Static HTML/JS (Apache)
+bizbranches.pk/api/* → PHP backend (Apache)
 ```
 
 Apache serves static files from the domain root and routes `/api/*` to PHP.
@@ -37,8 +37,8 @@ public_html/
 ### 1.1 Create MySQL Database
 
 1. **cPanel > MySQL Databases**
-2. Create database: `bizbranches` → becomes `digitalskills_bizbranchespk`
-3. Create user: `bizuser` → becomes `digitalskills_bizuser`
+2. Create database: `bizbranches` → becomes `bizbranchespk_bizbranches`
+3. Create user: `bizuser` → becomes `bizbranchespk_bizuser`
 4. Add user to database with **ALL PRIVILEGES**
 5. **phpMyAdmin** → select database → **Import** tab → upload `backend-php/migrations/001_create_tables.sql`
 
@@ -53,8 +53,8 @@ Via **File Manager**, create `public_html/api/.env`:
 ```env
 DB_HOST=localhost
 DB_PORT=3306
-DB_NAME=digitalskills_bizbranchespk
-DB_USER=digitalskills_bizuser
+DB_NAME=bizbranchespk_bizbranches
+DB_USER=bizbranchespk_bizuser
 DB_PASS=your_database_password
 
 APP_ENV=production
@@ -89,7 +89,7 @@ Go to: **GitHub repo > Settings > Secrets and variables > Actions**
 | `FTP_SERVER` | `ftp.bizbranches.pk` |
 | `FTP_USERNAME` | Your cPanel FTP username |
 | `FTP_PASSWORD` | Your cPanel FTP password |
-| `FTP_DEPLOY_DIR` | `/home/digitalskills/public_html/` |
+| `FTP_DEPLOY_DIR` | `/home/bizbranchespk/public_html/` |
 | `SITE_URL` | `https://bizbranches.pk` |
 | `CLOUDINARY_CLOUD_NAME` | Your Cloudinary cloud name |
 
@@ -111,13 +111,13 @@ Or trigger manually: **GitHub > Actions > Run workflow**
 
 **Option A – From the frontend (recommended)**  
 1. Ensure tables exist (Step 1.1 – import the SQL in phpMyAdmin).  
-2. Visit: `https://biz.digitalskillshouse.pk/admin/import`  
+2. Visit: `https://bizbranches.pk/admin/import`  
 3. Enter your **Admin secret** (same as `ADMIN_SECRET` in `api/.env`).  
 4. Upload one or more JSON files (categories, cities, businesses, reviews, users).  
 5. Click **Start import**. The page will show how many rows were imported.
 
 **Option B – From the server**  
-1. Visit: `https://biz.digitalskillshouse.pk/api/run-migration.php?secret=YOUR_ADMIN_SECRET`  
+1. Visit: `https://bizbranches.pk/api/run-migration.php?secret=YOUR_ADMIN_SECRET`  
 2. Wait for it to finish.  
 3. **Delete** `run-migration.php` from the server via File Manager after use.
 
@@ -125,9 +125,9 @@ Or trigger manually: **GitHub > Actions > Run workflow**
 
 ## Step 5: Verify
 
-1. Test frontend: `https://biz.digitalskillshouse.pk`
-2. Test API: `https://biz.digitalskillshouse.pk/api/ping`
-3. Test DB: `https://biz.digitalskillshouse.pk/api/db-health`
+1. Test frontend: `https://bizbranches.pk`
+2. Test API: `https://bizbranches.pk/api/ping`
+3. Test DB: `https://bizbranches.pk/api/db-health`
 
 ---
 
@@ -153,7 +153,7 @@ Or trigger manually: **GitHub > Actions > Run workflow**
    - Optional: **FTP_DEPLOY_DIR** (e.g. `/home/cpaneluser/public_html/`), **SITE_URL**, **CLOUDINARY_CLOUD_NAME**.
 
 3. **FTP deploy step fails**
-   - Check **FTP_SERVER**: use the hostname (e.g. `ftp.biz.digitalskillshouse.pk` or your host’s FTP server).
+   - Check **FTP_SERVER**: use the hostname (e.g. `ftp.bizbranches.pk` or your host’s FTP server).
    - **FTP_DEPLOY_DIR**: for cPanel it’s usually the full path to the folder that should contain the site, e.g. `/home/your_cpanel_username/public_html/` (trailing slash). If you leave it empty, the workflow uses `public_html/` (relative to your FTP user’s home).
 
 4. **Build fails**
@@ -166,12 +166,12 @@ Or trigger manually: **GitHub > Actions > Run workflow**
 The domain document root is pointing at the **API folder** instead of the folder that contains the **static site** and `api/`:
 
 1. **Set document root to the folder that has the static site**  
-   In **cPanel > Domains** (or **Subdomains**), edit `biz.digitalskillshouse.pk` and set **Document Root** to the directory that contains **both** `index.html` and `.htaccess` (frontend) **and** the `api/` subfolder. Example: `public_html` — **not** `public_html/api`.
+   In **cPanel > Domains** (or **Subdomains**), edit `bizbranches.pk` and set **Document Root** to the directory that contains **both** `index.html` and `.htaccess` (frontend) **and** the `api/` subfolder. Example: `public_html` — **not** `public_html/api`.
 
 2. **Add GitHub Secrets**  
    **Settings > Secrets > Actions**:  
-   - `FTP_DEPLOY_DIR` = that folder’s full path, e.g. `/home/digitalskills/public_html/` (end with `/`).  
-   - `SITE_URL` = `https://biz.digitalskillshouse.pk`
+   - `FTP_DEPLOY_DIR` = that folder’s full path, e.g. `/home/bizbranchespk/public_html/` (end with `/`).  
+   - `SITE_URL` = `https://bizbranches.pk`
 
 3. **Redeploy**  
    Push to `main` or run the **Deploy to cPanel via FTP** workflow. The workflow deploys the backend first, then builds the static site (calling your API for slugs) and uploads the `out/` contents to the root.

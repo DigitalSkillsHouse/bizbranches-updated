@@ -79,7 +79,7 @@ jobs:
         working-directory: frontend
         run: |
           SITE_URL="${{ secrets.SITE_URL }}"
-          [ -z "$SITE_URL" ] && SITE_URL="https://biz.digitalskillshouse.pk"
+          [ -z "$SITE_URL" ] && SITE_URL="https://bizbranches.pk"
           cat << EOF > .env.local
           NEXT_PUBLIC_BACKEND_URL=$SITE_URL
           BACKEND_URL=$SITE_URL

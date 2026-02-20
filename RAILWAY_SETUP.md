@@ -42,10 +42,10 @@ In **Variables**, set these (at least):
 
 | Variable | Required | Example |
 |----------|----------|---------|
-| `SMTP_HOST` | Yes (for email) | `mail.digitalskillshouse.pk` |
+| `SMTP_HOST` | Yes (for email) | `mail.bizbranches.pk` |
 | `SMTP_PORT` | Optional | `465` |
 | `SMTP_SECURE` | Optional | `true` |
-| `SMTP_USER` | Yes (for email) | `support@digitalskillshouse.pk` |
+| `SMTP_USER` | Yes (for email) | `support@bizbranches.pk` |
 | `SMTP_PASS` | Yes (for email) | Your email account password |
 | `EMAIL_FROM` | Optional | Same as SMTP_USER |
 | `EMAIL_FROM_NAME` | Optional | `BizBranches Support` |

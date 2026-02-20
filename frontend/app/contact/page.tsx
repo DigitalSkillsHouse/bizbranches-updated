@@ -24,7 +24,6 @@ export default function ContactPage() {
           <div>
             <p className="text-sm font-medium text-foreground mb-1">Email</p>
             <a href="mailto:support@bizbranches.pk" className="text-primary underline block">support@bizbranches.pk</a>
-            <a href="mailto:digitalskillshouse@gmail.com" className="text-primary underline block">digitalskillshouse@gmail.com</a>
           </div>
         </section>
       </div>

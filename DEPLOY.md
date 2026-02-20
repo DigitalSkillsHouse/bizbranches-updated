@@ -14,7 +14,7 @@ Output will be in **`frontend/out/`**. That folder is your deployable frontend.
 
 ## 2. Deploy the frontend
 
-Upload the **contents** of `frontend/out/` to your web root (e.g. `public_html` or the folder that serves https://biz.digitalskillshouse.pk).
+Upload the **contents** of `frontend/out/` to your web root (e.g. `public_html` or the folder that serves https://bizbranches.pk).
 
 - **cPanel / Apache**: Upload `out/` contents. Ensure `.htaccess` is uploaded (it’s in `out/` from `public/.htaccess`) so listing URLs like `/digital-skills-house` load the app.
 - **Netlify**: Set publish directory to `frontend/out` (or upload `out` and set publish to that folder). `_redirects` in `out/` will handle SPA routing.
@@ -22,13 +22,13 @@ Upload the **contents** of `frontend/out/` to your web root (e.g. `public_html` 
 
 ## 3. Backend (API)
 
-Your API is already at https://biz.digitalskillshouse.pk/api/ (PHP). Keep the backend deployed as it is so `/api/*` keeps working.
+Your API is already at https://bizbranches.pk/api/ (PHP). Keep the backend deployed as it is so `/api/*` keeps working.
 
 ## 4. After deploy
 
-- Visit https://biz.digitalskillshouse.pk/search
+- Visit https://bizbranches.pk/search
 - Click a listing (e.g. Digital Skills House)
-- You should land on the listing detail page (e.g. https://biz.digitalskillshouse.pk/digital-skills-house) with full details.
+- You should land on the listing detail page (e.g. https://bizbranches.pk/digital-skills-house) with full details.
 
 **If listing URLs show the homepage but the URL is correct:** The service worker was previously returning the cached homepage on failed requests. Deploy the updated `sw.js` (v3), then ask users to hard-refresh (Ctrl+Shift+R) or clear site data so the new worker installs.
 

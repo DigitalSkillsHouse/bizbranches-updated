@@ -1,10 +1,10 @@
 -- BizBranches MySQL Database Schema
 -- Run this to create all tables from scratch
 
--- If running in phpMyAdmin, select your database first (digitalskills_bizbranchespk)
+-- If running in phpMyAdmin, select your database first (bizbranchespk_bizbranches)
 -- These lines are for CLI usage only:
-CREATE DATABASE IF NOT EXISTS digitalskills_bizbranchespk CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE digitalskills_bizbranchespk;
+CREATE DATABASE IF NOT EXISTS bizbranchespk_bizbranches CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE bizbranchespk_bizbranches;
 
 -- Businesses table
 CREATE TABLE IF NOT EXISTS businesses (

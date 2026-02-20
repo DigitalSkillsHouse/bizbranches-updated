@@ -2,7 +2,7 @@ const { MongoClient } = require('mongodb');
 const fs = require('fs');
 const path = require('path');
 
-const MONGO_URI = process.env.MONGODB_URI || 'mongodb+srv://digitalskillshouse_db_user:7PgCCANQ6udJN0nJ@cluster1.yikbs52.mongodb.net/BizBranches?retryWrites=true&w=majority';
+const MONGO_URI = process.env.MONGODB_URI || 'mongodb+srv://your_db_user:your_db_password@your_cluster.mongodb.net/BizBranches?retryWrites=true&w=majority';
 const DB_NAME = 'BizBranches';
 const OUTPUT_DIR = __dirname;
 
