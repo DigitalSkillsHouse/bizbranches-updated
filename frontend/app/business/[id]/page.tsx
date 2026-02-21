@@ -1,7 +1,7 @@
 "use client"
 import React, { useRef, useState, useEffect } from 'react'
 import { MapPin, Phone, Mail, Star, FileText, Globe, MessageCircle, User, CheckCircle } from 'lucide-react'
-import { useParams } from "next/navigation"
+import { useParams, usePathname } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
@@ -30,8 +30,12 @@ export default function BusinessDetailPage({
   initialRatingCount?: number
   initialRelated?: any[]
 }) {
+  const pathname = usePathname()
   const params = useParams() as { id?: string; slug?: string }
-  const businessId = (params.id || params.slug || "") as string
+  const rawParam = params.id || params.slug || ""
+  const businessId = (!rawParam || rawParam === "_placeholder")
+    ? (pathname.replace(/^\/+/, '').split('/').filter(Boolean).pop() || "")
+    : rawParam
   const [business, setBusiness] = useState<any>(initialBusiness || null)
   const [reviews, setReviews] = useState<any[]>(initialReviews)
   const [related, setRelated] = useState<any[]>(initialRelated)
