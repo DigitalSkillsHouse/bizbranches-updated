@@ -31,7 +31,11 @@ export default function BusinessDetailPage({
   initialRelated?: any[]
 }) {
   const params = useParams() as { id?: string; slug?: string }
-  const businessId = (params.id || params.slug || "") as string
+  const fromParams = (params.id || params.slug || "") as string
+  // Fallback: when _placeholder.html is served for unknown slugs (e.g. /testing-11),
+  // useParams may return _placeholder; read slug from URL path instead
+  const pathSlug = typeof window !== "undefined" ? (window.location.pathname || "").replace(/^\/+|\/+$/g, "").split("/")[0] || "" : ""
+  const businessId = (fromParams && fromParams !== "_placeholder") ? fromParams : pathSlug
   const [business, setBusiness] = useState<any>(initialBusiness || null)
   const [reviews, setReviews] = useState<any[]>(initialReviews)
   const [related, setRelated] = useState<any[]>(initialRelated)
