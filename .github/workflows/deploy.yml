@@ -1,18 +1,60 @@
+# Deploy to cPanel via FTP.
+# - Path-based deploy: only frontend or backend runs when only that part changed.
+# - FTP sync state is cached with a STABLE key (same save/restore key) so the next run
+#   restores it and FTP-Deploy-Action uploads only changed files (fixes 2–3 hour full syncs).
+# - Backend now saves sync state after deploy; frontend uses one cache key (no run_id).
+
 name: Deploy to cPanel via FTP
 
 on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      deploy_target:
+        description: 'Deploy target (leave empty to use path detection on push)'
+        required: false
+        default: ''
+        type: choice
+        options:
+          - ''
+          - frontend
+          - backend
+          - all
 
 env:
   NODE_VERSION: "20"
   PHP_VERSION: "8.2"
 
 jobs:
+  detect-changes:
+    name: Detect changed paths
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      config: ${{ steps.filter.outputs.config }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend-php/**'
+            frontend:
+              - 'frontend/**'
+              - 'cpanel-htaccess'
+            config:
+              - '.github/workflows/**'
+
   deploy-backend:
     name: Deploy PHP Backend
     runs-on: ubuntu-latest
+    needs: [detect-changes]
+    if: |
+      github.event_name == 'workflow_dispatch' && (github.event.inputs.deploy_target == 'backend' || github.event.inputs.deploy_target == 'all' || github.event.inputs.deploy_target == '') ||
+      github.event_name != 'workflow_dispatch' && (needs.detect-changes.outputs.backend == 'true' || needs.detect-changes.outputs.config == 'true')
     steps:
       - name: Check required secrets
         env:
@@ -30,11 +72,24 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Restore FTP sync state (backend)
+        uses: actions/cache@v4
+        with:
+          path: backend-php/.ftp-deploy-sync-state.json
+          key: ftp-sync-state-backend-${{ runner.os }}
+
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ env.PHP_VERSION }}
           tools: composer:v2
+
+      - name: Cache Composer vendor
+        uses: actions/cache@v4
+        with:
+          path: backend-php/vendor
+          key: composer-${{ runner.os }}-${{ hashFiles('backend-php/composer.json') }}
+          restore-keys: composer-${{ runner.os }}-
 
       - name: Install Composer dependencies
         working-directory: backend-php
@@ -58,10 +113,20 @@ jobs:
             **/migrations/**
             **/run-migration.php
 
+      - name: Save FTP sync state (backend)
+        uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: backend-php/.ftp-deploy-sync-state.json
+          key: ftp-sync-state-backend-${{ runner.os }}
+
   deploy-frontend:
     name: Build & Deploy Frontend (Static)
     runs-on: ubuntu-latest
-    needs: [deploy-backend]
+    needs: [detect-changes]
+    if: |
+      github.event_name == 'workflow_dispatch' && (github.event.inputs.deploy_target == 'frontend' || github.event.inputs.deploy_target == 'all' || github.event.inputs.deploy_target == '') ||
+      github.event_name != 'workflow_dispatch' && (needs.detect-changes.outputs.frontend == 'true' || needs.detect-changes.outputs.config == 'true')
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -70,10 +135,26 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: frontend/node_modules
+          key: npm-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json', 'frontend/pnpm-lock.yaml') }}
+          restore-keys: npm-${{ runner.os }}-
 
       - name: Install frontend dependencies
         working-directory: frontend
-        run: npm install
+        run: npm ci --prefer-offline
+
+      - name: Cache Next.js build
+        uses: actions/cache@v4
+        with:
+          path: frontend/.next/cache
+          key: nextjs-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json', 'frontend/pnpm-lock.yaml', 'frontend/next.config.mjs') }}
+          restore-keys: nextjs-${{ runner.os }}-
 
       - name: Create frontend .env
         working-directory: frontend
@@ -107,7 +188,14 @@ jobs:
       - name: Copy .htaccess to out
         run: cp cpanel-htaccess frontend/out/.htaccess
 
+      - name: Restore FTP sync state (frontend)
+        uses: actions/cache@v4
+        with:
+          path: frontend/out/.ftp-deploy-sync-state.json
+          key: ftp-sync-state-frontend-${{ runner.os }}
+
       - name: Deploy static site to cPanel via FTP
+        id: deploy-frontend-ftp
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
@@ -120,3 +208,10 @@ jobs:
             **/.git*
             **/.git*/**
             **/api/**
+
+      - name: Save FTP sync state (frontend)
+        uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: frontend/out/.ftp-deploy-sync-state.json
+          key: ftp-sync-state-frontend-${{ runner.os }}
